@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import { PetInfo_EffectSchema, type PetInfo_Effect } from "./generated/petcode/v1/message_pb.js";
+import { PetInfo_EffectSchema, type PetInfo_Effect } from "./generated/seerbp/petcode/v1/message_pb.js";
 
 export const EffectType = {
   GENERAL: 1,

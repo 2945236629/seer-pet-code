@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import type { OmitTypeName } from "./omit-type-name.js";
-import { MintmarkInfo_Universal_GemItemSchema, MintmarkInfoSchema, PetAbilityValueSchema, PetCodeMessage_DisplayMode, PetCodeMessage_Server, PetCodeMessageSchema, PetInfoSchema, ResistanceInfo_StateItemSchema, type MintmarkInfo, type MintmarkInfo_Ability, type MintmarkInfo_Quanxiao, type MintmarkInfo_Skill, type MintmarkInfo_Universal, type PetAbilityValueJson, type PetCodeMessage, type PetCodeMessage_SeerSetJson, type PetInfo, type ResistanceInfo_StateItem } from "./generated/petcode/v1/message_pb.js";
+import { MintmarkInfo_Universal_GemItemSchema, MintmarkInfoSchema, PetAbilityValueSchema, PetCodeMessage_DisplayMode, PetCodeMessage_Server, PetCodeMessageSchema, PetInfoSchema, ResistanceInfo_StateItemSchema, type MintmarkInfo, type MintmarkInfo_Ability, type MintmarkInfo_Quanxiao, type MintmarkInfo_Skill, type MintmarkInfo_Universal, type PetAbilityValueJson, type PetCodeMessage, type PetCodeMessage_SeerSetJson, type PetInfo, type ResistanceInfo_StateItem } from "./generated/seerbp/petcode/v1/message_pb.js";
 
 export function createAbilityMintmark(id: number): MintmarkInfo {
   return create(MintmarkInfoSchema, { mintmark: { value: { id }, case: "ability" } });
