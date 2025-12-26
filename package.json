@@ -1,0 +1,15 @@
+{
+  "name": "root",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "author": "Nattsu39",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "committier": "^0.2.3",
+    "husky": "^9.1.7"
+  }
+}
