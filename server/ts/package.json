@@ -1,5 +1,6 @@
 {
   "name": "@seerbp/petcode-server",
+  "private": true,
   "version": "1.2.0",
   "description": "",
   "license": "MIT",
@@ -17,6 +18,9 @@
     "url": "https://github.com/Nattsu39/seer-pet-code/issues"
   },
   "homepage": "https://github.com/Nattsu39/seer-pet-code/#readme",
+  "repository": {
+    "url": "https://github.com/Nattsu39/seer-pet-code"
+  },
   "scripts": {
     "prepublishOnly": "npm run clean && npm run build",
     "clean": "npx rimraf ./dist",

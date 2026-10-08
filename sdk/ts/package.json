@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "PetCode SDK for TypeScript",
   "license": "MIT",
-  "author": "Nattsu39 <Natsu39@outlook.com> (https://github.com/Nattsu39)",
+  "author": "Nattsu39 <Nattsu39@outlook.com> (https://github.com/Nattsu39)",
   "keywords": [
     "seer",
     "petcode",
@@ -11,6 +11,9 @@
     "typescript",
     "protobuf"
   ],
+  "repository": {
+    "url": "https://github.com/Nattsu39/seer-pet-code"
+  },
   "bugs": {
     "url": "https://github.com/Nattsu39/seer-pet-code/issues"
   },
