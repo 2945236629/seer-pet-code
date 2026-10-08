@@ -216,6 +216,14 @@ jobs:
         working-directory: sdk/ts
         run: npm ci
 
+      - name: 安装 Buf
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: 生成 TypeScript 协议代码
+        run: buf generate --template buf.gen.sdk-ts.yaml
+
       - name: 运行测试
         working-directory: sdk/ts
         run: npm test
@@ -258,6 +266,14 @@ jobs:
       - name: 安装依赖
         working-directory: sdk/ts
         run: npm ci
+
+      - name: 安装 Buf
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: 生成 TypeScript 协议代码
+        run: buf generate --template buf.gen.sdk-ts.yaml
 
       - name: 构建
         working-directory: sdk/ts
