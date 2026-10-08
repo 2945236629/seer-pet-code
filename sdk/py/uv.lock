@@ -25,14 +25,14 @@ wheels = [
 
 [[package]]
 name = "gnostic-gnostic-protocolbuffers-pyi"
-version = "33.2.0.1.20230414000709+087bc8072ce4"
+version = "36.2.0.1.20230414000709+087bc8072ce4"
 source = { registry = "https://buf.build/gen/python" }
 dependencies = [
     { name = "protobuf" },
     { name = "types-protobuf" },
 ]
 wheels = [
-    { url = "https://buf.build/gen/python/gnostic-gnostic-protocolbuffers-pyi/gnostic_gnostic_protocolbuffers_pyi-33.2.0.1.20230414000709+087bc8072ce4-py3-none-any.whl" },
+    { url = "https://buf.build/gen/python/gnostic-gnostic-protocolbuffers-pyi/gnostic_gnostic_protocolbuffers_pyi-36.2.0.1.20230414000709+087bc8072ce4-py3-none-any.whl", upload-time = "2026-09-19T01:44:49Z" },
 ]
 
 [[package]]
@@ -44,31 +44,31 @@ dependencies = [
     { name = "protobuf" },
 ]
 wheels = [
-    { url = "https://buf.build/gen/python/gnostic-gnostic-protocolbuffers-python/gnostic_gnostic_protocolbuffers_python-33.2.0.1.20230414000709+087bc8072ce4-py3-none-any.whl" },
+    { url = "https://buf.build/gen/python/gnostic-gnostic-protocolbuffers-python/gnostic_gnostic_protocolbuffers_python-33.2.0.1.20230414000709+087bc8072ce4-py3-none-any.whl", upload-time = "2025-12-08T18:57:40Z" },
 ]
 
 [[package]]
 name = "googleapis-googleapis-protocolbuffers-pyi"
-version = "33.2.0.1.20251126203132+004180b77378"
+version = "36.2.0.1.20260414192239+c17df5b2beca"
 source = { registry = "https://buf.build/gen/python" }
 dependencies = [
     { name = "protobuf" },
     { name = "types-protobuf" },
 ]
 wheels = [
-    { url = "https://buf.build/gen/python/googleapis-googleapis-protocolbuffers-pyi/googleapis_googleapis_protocolbuffers_pyi-33.2.0.1.20251126203132+004180b77378-py3-none-any.whl" },
+    { url = "https://buf.build/gen/python/googleapis-googleapis-protocolbuffers-pyi/googleapis_googleapis_protocolbuffers_pyi-36.2.0.1.20260414192239+c17df5b2beca-py3-none-any.whl", upload-time = "2026-09-19T01:44:49Z" },
 ]
 
 [[package]]
 name = "googleapis-googleapis-protocolbuffers-python"
-version = "33.2.0.1.20251126203132+004180b77378"
+version = "33.2.0.1.20260414192239+c17df5b2beca"
 source = { registry = "https://buf.build/gen/python" }
 dependencies = [
     { name = "googleapis-googleapis-protocolbuffers-pyi" },
     { name = "protobuf" },
 ]
 wheels = [
-    { url = "https://buf.build/gen/python/googleapis-googleapis-protocolbuffers-python/googleapis_googleapis_protocolbuffers_python-33.2.0.1.20251126203132+004180b77378-py3-none-any.whl" },
+    { url = "https://buf.build/gen/python/googleapis-googleapis-protocolbuffers-python/googleapis_googleapis_protocolbuffers_python-33.2.0.1.20260414192239+c17df5b2beca-py3-none-any.whl", upload-time = "2026-04-14T19:22:39Z" },
 ]
 
 [[package]]
@@ -91,7 +91,7 @@ wheels = [
 
 [[package]]
 name = "petcode"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "seerbp-petcode-protocolbuffers-python" },
@@ -105,7 +105,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "seerbp-petcode-protocolbuffers-python", specifier = "==33.2.0.1.20260110152342+c9e05318fd42" }]
+requires-dist = [{ name = "seerbp-petcode-protocolbuffers-python", specifier = "==33.2.0.1.20261003053414+0215edd99332" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -193,7 +193,7 @@ wheels = [
 
 [[package]]
 name = "seerbp-petcode-protocolbuffers-pyi"
-version = "33.2.0.1.20260110152342+c9e05318fd42"
+version = "36.2.0.1.20261003053414+0215edd99332"
 source = { registry = "https://buf.build/gen/python" }
 dependencies = [
     { name = "gnostic-gnostic-protocolbuffers-pyi" },
@@ -202,12 +202,12 @@ dependencies = [
     { name = "types-protobuf" },
 ]
 wheels = [
-    { url = "https://buf.build/gen/python/seerbp-petcode-protocolbuffers-pyi/seerbp_petcode_protocolbuffers_pyi-33.2.0.1.20260110152342+c9e05318fd42-py3-none-any.whl" },
+    { url = "https://buf.build/gen/python/seerbp-petcode-protocolbuffers-pyi/seerbp_petcode_protocolbuffers_pyi-36.2.0.1.20261003053414+0215edd99332-py3-none-any.whl", upload-time = "2026-10-03T05:34:14Z" },
 ]
 
 [[package]]
 name = "seerbp-petcode-protocolbuffers-python"
-version = "33.2.0.1.20260110152342+c9e05318fd42"
+version = "33.2.0.1.20261003053414+0215edd99332"
 source = { registry = "https://buf.build/gen/python" }
 dependencies = [
     { name = "gnostic-gnostic-protocolbuffers-python" },
@@ -216,7 +216,7 @@ dependencies = [
     { name = "seerbp-petcode-protocolbuffers-pyi" },
 ]
 wheels = [
-    { url = "https://buf.build/gen/python/seerbp-petcode-protocolbuffers-python/seerbp_petcode_protocolbuffers_python-33.2.0.1.20260110152342+c9e05318fd42-py3-none-any.whl" },
+    { url = "https://buf.build/gen/python/seerbp-petcode-protocolbuffers-python/seerbp_petcode_protocolbuffers_python-33.2.0.1.20261003053414+0215edd99332-py3-none-any.whl", upload-time = "2026-10-03T05:34:14Z" },
 ]
 
 [[package]]

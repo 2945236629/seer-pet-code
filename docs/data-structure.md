@@ -270,7 +270,7 @@
 | nature | [int32](#int32) |  | 精灵性格，值为性格ID |
 | evs | [PetAbilityValue](#seerbp-petcode-v1-PetAbilityValue) |  | 精灵学习力 |
 | skills | [int32](#int32) | repeated | 精灵携带的技能 |
-| extra_hp | [int32](#int32) |  | **Deprecated.** 精灵额外体力上限，该字段已经废弃，请使用 PetAbilityBonus 中的 TYPE_BASEVALUE 类型来获取/设置精灵的额外体力上限。 调用方应检查该字段的值，如果非 0 则必须将其转换为 PetAbilityBonus 中一个全新的 TYPE_BASEVALUE 类型加成项，而不是与其他已有的加成项合并。 |
+| extra_hp | [int32](#int32) |  | **Deprecated.** 精灵额外体力上限，该字段已经废弃，请使用 PetAbilityBonus 中的 TYPE_BASEVALUE 类型来获取/设置精灵的额外体力上限。 调用方应检查该字段的值，如果非 0 则必须将其转换为 PetAbilityBonus 中一个全新的 TYPE_BASEVALUE 类型加成项。（而不是与其他已有的加成项合并） |
 | effects | [PetInfo.Effect](#seerbp-petcode-v1-PetInfo-Effect) | repeated | 精灵特效列表，根据effectInfo.status字段区分不同类型（特性/异能特质/魂印）的特效。<br> （在游戏内，这些特效都存放在同一个effectInfo数组中，这里采用相同的设计以确保游戏数据包和工具的双重兼容性） |
 | mintmarks | [MintmarkInfo](#seerbp-petcode-v1-MintmarkInfo) | repeated | 精灵装备的刻印 |
 | resistance | [ResistanceInfo](#seerbp-petcode-v1-ResistanceInfo) | optional | 精灵的抗性信息 |

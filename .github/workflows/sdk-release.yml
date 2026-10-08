@@ -1,0 +1,390 @@
+name: 发布 SDK
+
+# ---------------------------------------------------------------------------
+# 触发方式
+#   - 推送 v* 版本标签（协议 + SDK 统一版本号），例如 v1.3.0
+#   - 手动 workflow_dispatch 指定标签，用于失败后重跑
+#
+# 发布链路
+#   validate ─┬─ publish-bsr ── test-python ── publish-pypi ─┐
+#             └─ test-typescript ── publish-npm ─────────────┴─ release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的标签（例如 v1.3.0）'
+        required: true
+        type: string
+
+# 发布过程不允许被新的推送打断
+concurrency:
+  group: sdk-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  BUF_VERSION: 1.73.0
+
+jobs:
+  # -------------------------------------------------------------------------
+  # 1. 版本与协议校验
+  # -------------------------------------------------------------------------
+  validate:
+    name: 校验版本一致性
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: 解析并校验版本号
+        id: meta
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+
+          if [[ "$TAG" != v* ]]; then
+            echo "::error::标签必须以 v 开头，当前为 $TAG"
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::版本号必须为 X.Y.Z 形式，当前为 $VERSION"
+            exit 1
+          fi
+
+          TS_VERSION=$(jq -r .version sdk/ts/package.json)
+          PY_VERSION=$(python3 -c "import pathlib,tomllib;print(tomllib.loads(pathlib.Path('sdk/py/pyproject.toml').read_text('utf-8'))['project']['version'])")
+          BSR_PIN=$(python3 -c "import pathlib,tomllib;deps=tomllib.loads(pathlib.Path('sdk/py/pyproject.toml').read_text('utf-8'))['project']['dependencies'];print(next((d.split('==',1)[1] for d in deps if d.startswith('seerbp-petcode-protocolbuffers-python==')),'未找到'))")
+
+          echo "标签版本      : $VERSION"
+          echo "sdk/ts 版本   : $TS_VERSION"
+          echo "sdk/py 版本   : $PY_VERSION"
+          echo "BSR 生成包 pin: $BSR_PIN"
+
+          if [ "$TS_VERSION" != "$VERSION" ] || [ "$PY_VERSION" != "$VERSION" ]; then
+            echo "::error::版本号与标签不一致，请先同步后再打标签："
+            echo "::error::  sdk/ts/package.json   -> $TS_VERSION（期望 $VERSION）"
+            echo "::error::  sdk/py/pyproject.toml -> $PY_VERSION（期望 $VERSION）"
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: 安装 Buf
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: 协议 lint
+        run: buf lint
+
+      - name: 破坏性变更检查（对比 BSR 上的 main 标签）
+        run: buf breaking --against "buf.build/seerbp/petcode:main"
+
+  # -------------------------------------------------------------------------
+  # 2. 推送协议到 BSR 并打版本标签
+  # -------------------------------------------------------------------------
+  publish-bsr:
+    name: 推送协议到 BSR
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+          fetch-depth: 0
+
+      - name: 安装 Buf
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: 登录 BSR
+        env:
+          BUF_TOKEN: ${{ secrets.BUF_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BUF_TOKEN:-}" ]; then
+            echo "::error::未配置 BUF_TOKEN，无法推送到 BSR"
+            exit 1
+          fi
+          buf registry login buf.build --token-stdin <<< "$BUF_TOKEN"
+
+      - name: 同步依赖摘要
+        run: buf dep update
+
+      - name: 确认 buf.lock 已提交
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- buf.lock; then
+            echo "::error::buf.lock 与 buf.yaml 不同步，请在本地执行 buf dep update 并提交后再打标签"
+            git --no-pager diff -- buf.lock
+            exit 1
+          fi
+
+      - name: 推送到 BSR 并打标签
+        run: |
+          set -euo pipefail
+          buf push \
+            --label "${{ needs.validate.outputs.tag }}" \
+            --source-control-url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+
+  # -------------------------------------------------------------------------
+  # 3. Python SDK 测试（依赖 BSR 已推送的生成包）
+  # -------------------------------------------------------------------------
+  test-python:
+    name: Python 测试 (py${{ matrix.python-version }})
+    needs: [validate, publish-bsr]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.13']
+    env:
+      # 覆盖 sdk/py/.python-version 中固定的 3.10，让矩阵生效
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: 安装 uv
+        uses: astral-sh/setup-uv@v8.3.2
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: sdk/py/uv.lock
+
+      - name: 安装依赖（严格锁定）
+        working-directory: sdk/py
+        run: uv sync --locked
+
+      - name: 运行测试
+        working-directory: sdk/py
+        run: uv run pytest
+
+  # -------------------------------------------------------------------------
+  # 4. TypeScript SDK 测试
+  # -------------------------------------------------------------------------
+  test-typescript:
+    name: TypeScript 测试 (node${{ matrix.node-version }})
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['22', '24']
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: sdk/ts/package-lock.json
+
+      - name: 安装依赖
+        working-directory: sdk/ts
+        run: npm ci
+
+      - name: 运行测试
+        working-directory: sdk/ts
+        run: npm test
+
+  # -------------------------------------------------------------------------
+  # 5. 发布到 npm（Trusted Publishing / OIDC）
+  # -------------------------------------------------------------------------
+  publish-npm:
+    name: 发布到 npm
+    needs: [validate, test-typescript]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # npm Trusted Publishing 必需
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: 检查 npm 版本
+        run: |
+          set -euo pipefail
+          NPM_VERSION=$(npm --version)
+          echo "npm $NPM_VERSION / node $(node --version)"
+          LOWEST=$(printf '%s\n%s\n' 11.5.1 "$NPM_VERSION" | sort -V | sed -n '1p')
+          if [ "$LOWEST" != "11.5.1" ]; then
+            echo "::error::Trusted Publishing 需要 npm >= 11.5.1，当前为 $NPM_VERSION"
+            exit 1
+          fi
+
+      - name: 安装依赖
+        working-directory: sdk/ts
+        run: npm ci
+
+      - name: 构建
+        working-directory: sdk/ts
+        run: npm run build
+
+      - name: 打包（作为 Release 附件）
+        working-directory: sdk/ts
+        run: npm pack
+
+      - name: 检查 npm 上是否已存在该版本
+        id: check
+        working-directory: sdk/ts
+        run: |
+          set -euo pipefail
+          if npm view "@seerbp/petcode-sdk@${{ needs.validate.outputs.version }}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "npm 上已存在 ${{ needs.validate.outputs.version }}，跳过发布"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 发布到 npm
+        if: steps.check.outputs.exists == 'false'
+        working-directory: sdk/ts
+        run: npm publish --access public --provenance
+
+      - name: 上传 npm 产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package
+          path: sdk/ts/*.tgz
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # 6. 发布到 PyPI（Trusted Publishing / OIDC）
+  # -------------------------------------------------------------------------
+  publish-pypi:
+    name: 发布到 PyPI
+    needs: [validate, test-python]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # PyPI Trusted Publishing 必需
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: 安装 uv
+        uses: astral-sh/setup-uv@v8.3.2
+
+      - name: 构建 sdist 与 wheel
+        working-directory: sdk/py
+        run: uv build
+
+      - name: 检查 PyPI 上是否已存在该版本
+        id: check
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          if curl -fsS https://pypi.org/pypi/petcode/json -o /tmp/pypi.json; then
+            if jq -e --arg v "$VERSION" '.releases[$v] | length > 0' /tmp/pypi.json >/dev/null; then
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              echo "PyPI 上已存在 $VERSION，跳过发布"
+              exit 0
+            fi
+          else
+            echo "PyPI 上尚无 petcode 项目，本次为首次发布"
+          fi
+
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: 发布到 PyPI
+        if: steps.check.outputs.exists == 'false'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: sdk/py/dist
+
+      - name: 上传 Python 产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-dist
+          path: sdk/py/dist/*
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # 7. 创建 GitHub Release
+  # -------------------------------------------------------------------------
+  release:
+    name: 创建 GitHub Release
+    needs: [validate, publish-npm, publish-pypi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: 下载构建产物
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: 汇总产物
+        run: |
+          set -euo pipefail
+          find artifacts -type f | sort
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ${{ needs.validate.outputs.tag }}
+          generate_release_notes: true
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+          files: artifacts/**/*
+
+      - name: 写入任务摘要
+        run: |
+          {
+            echo "## ✅ PetCode ${{ needs.validate.outputs.tag }} 发布完成"
+            echo ""
+            echo "| 目标 | 版本 |"
+            echo "| --- | --- |"
+            echo "| npm \`@seerbp/petcode-sdk\` | \`${{ needs.validate.outputs.version }}\` |"
+            echo "| PyPI \`petcode\` | \`${{ needs.validate.outputs.version }}\` |"
+            echo "| BSR \`buf.build/seerbp/petcode\` | label \`${{ needs.validate.outputs.tag }}\` |"
+            echo "| GitHub Release | \`${{ needs.validate.outputs.tag }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

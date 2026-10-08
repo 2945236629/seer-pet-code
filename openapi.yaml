@@ -14,7 +14,7 @@ info:
   license:
     name: MIT License
     url: https://github.com/nattsu39/seer-pet-code/blob/main/LICENSE
-  version: 1.0.0
+  version: 1.2.0
 paths:
   /seerbp.petcode.server.v1.PetCodeService/ConvertPetCodeMessageDeprecatedData:
     post:
@@ -630,18 +630,14 @@ components:
           type: integer
           title: extra_hp
           format: int32
-          description: |-
-            精灵额外体力上限，该字段已经废弃，请使用 PetAbilityBonus 中的 TYPE_BASEVALUE 类型来获取/设置精灵的额外体力上限。
-             调用方应检查该字段的值，如果非 0 则必须将其转换为 PetAbilityBonus 中一个全新的 TYPE_BASEVALUE 类型加成项，而不是与其他已有的加成项合并。
+          description: "精灵额外体力上限，该字段已经废弃，请使用 PetAbilityBonus 中的 TYPE_BASEVALUE 类型来获取/设置精灵的额外体力上限。\r\n 调用方应检查该字段的值，如果非 0 则必须将其转换为 PetAbilityBonus 中一个全新的 TYPE_BASEVALUE 类型加成项。（而不是与其他已有的加成项合并）"
           deprecated: true
         effects:
           type: array
           items:
             $ref: '#/components/schemas/seerbp.petcode.v1.PetInfo.Effect'
           title: effects
-          description: |-
-            精灵特效列表，根据effectInfo.status字段区分不同类型（特性/异能特质/魂印）的特效。<br>
-             （在游戏内，这些特效都存放在同一个effectInfo数组中，这里采用相同的设计以确保游戏数据包和工具的双重兼容性）
+          description: "精灵特效列表，根据effectInfo.status字段区分不同类型（特性/异能特质/魂印）的特效。<br>\r\n （在游戏内，这些特效都存放在同一个effectInfo数组中，这里采用相同的设计以确保游戏数据包和工具的双重兼容性）"
         mintmarks:
           type: array
           items:
@@ -763,9 +759,7 @@ components:
           type: integer
           title: percent
           format: int32
-          description: |-
-            状态抗性的百分比加成值（包含全免的5%），
-             例如点满抗性+拥有全免抗性后，抗性值为55%，则该字段值为55
+          description: "状态抗性的百分比加成值（包含全免的5%），\r\n 例如点满抗性+拥有全免抗性后，抗性值为55%，则该字段值为55"
       title: StateItem
       additionalProperties: false
       description: 状态抗性

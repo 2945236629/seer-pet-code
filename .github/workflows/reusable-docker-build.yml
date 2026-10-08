@@ -34,6 +34,11 @@ on:
         required: false
         type: string
         default: '20'
+      version-prefix:
+        description: '版本标签前缀，用于从 Git 标签中提取语义化版本（例如 server-v）'
+        required: false
+        type: string
+        default: 'v'
     outputs:
       image-tags:
         description: '生成的镜像标签列表'
@@ -105,6 +110,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 解析语义化版本
+        id: version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # 例如 version-prefix=server-v 时：server-v1.2.0 -> 1.2.0
+          echo "value=${GITHUB_REF_NAME#"${{ inputs.version-prefix }}"}" >> "$GITHUB_OUTPUT"
+
       - name: 提取 Docker 元数据
         id: meta
         uses: docker/metadata-action@v5
@@ -115,10 +127,10 @@ jobs:
             type=ref,event=branch
             # PR 标签
             type=ref,event=pr
-            # 语义化版本标签
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            # 语义化版本标签（仅在能从标签提取出版本号时启用）
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.value }},enable=${{ steps.version.outputs.value != '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.value }},enable=${{ steps.version.outputs.value != '' }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.value }},enable=${{ steps.version.outputs.value != '' }}
             # Git SHA 短标签（默认前缀 sha-，避免非分支事件下 prefix 为空导致非法标签）
             type=sha,format=short
             # 最新标签（仅用于 main/master 分支）

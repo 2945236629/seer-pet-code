@@ -1,5 +1,8 @@
 name: 发布 TypeScript Server 到 GHCR
 
+# 触发标签：server-v<版本>，例如 server-v1.2.0
+# 不再监听 v*：通用 v* 标签由 sdk-release.yml 负责（协议 + SDK）。
+# server/ts 依赖 @seerbp/petcode-sdk，因此必须先等 SDK 发布完成再推 server-v*。
 on:
   push:
     branches:
@@ -11,8 +14,7 @@ on:
       - '.github/workflows/ts-server-publish.yml'
       - '.github/workflows/reusable-docker-build.yml'
     tags:
-      - 'v*'
-      - 'ts-server-v*'
+      - 'server-v*'
   pull_request:
     branches:
       - main
@@ -46,6 +48,7 @@ jobs:
       image-name: 'petcode-ts-server'
       platforms: ${{ inputs.platforms || 'linux/amd64,linux/arm64' }}
       node-version: '22'
+      version-prefix: 'server-v'
     secrets: inherit
 
   # 可选：部署后的集成测试
