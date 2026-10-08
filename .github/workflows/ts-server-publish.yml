@@ -5,14 +5,6 @@ name: 发布 TypeScript Server 到 GHCR
 # server/ts 依赖 @seerbp/petcode-sdk，因此必须先等 SDK 发布完成再推 server-v*。
 on:
   push:
-    branches:
-      - main
-      - master
-      - develop
-    paths:
-      - 'server/ts/**'
-      - '.github/workflows/ts-server-publish.yml'
-      - '.github/workflows/reusable-docker-build.yml'
     tags:
       - 'server-v*'
   pull_request:
